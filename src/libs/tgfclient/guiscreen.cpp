@@ -424,12 +424,8 @@ bool GfScrInitSDL2(int nWinWidth, int nWinHeight, int nFullScreen)
         return false;
     }
 
-#ifdef __APPLE__
-    // Version d'OpenGL
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#else
+// rlpilot: use the legacy 2.1 context on macOS too (renderers are fixed-function GL)
+#if 1
     // Version d'OpenGL
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
@@ -1251,12 +1247,8 @@ bool GfScrInitSDL2()
         return false;
     }
 
-#ifdef __APPLE__
-    // Version d'OpenGL
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#else
+// rlpilot: use the legacy 2.1 context on macOS too (renderers are fixed-function GL)
+#if 1
     // Version d'OpenGL
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);

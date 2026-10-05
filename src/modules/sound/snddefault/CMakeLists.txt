@@ -13,11 +13,11 @@ SET(_HEADERS snddefault.h
                        OpenalSoundInterface.h
                        grsound.h)
 FIND_PACKAGE(PLIB)
-IF(PLIB_FOUND AND OPTION_SSGGRAPH)
+IF(PLIB_FOUND AND OPTION_SSGGRAPH AND NOT APPLE)
    SET(_SOURCES ${_SOURCES} PlibSound.cpp PlibSoundInterface.cpp)
    SET(_HEADERS ${_HEADERS} PlibSound.h PlibSoundInterface.h)
-   ADD_PLIB_INCLUDEDIR()
-ENDIF(PLIB_FOUND AND OPTION_SSGGRAPH)
+ENDIF(PLIB_FOUND AND OPTION_SSGGRAPH AND NOT APPLE)
+ADD_PLIB_INCLUDEDIR()
 
 SET(_OTHER_SOURCES )
 
@@ -51,7 +51,9 @@ SD_ADD_LIBRARY(snddefault MODULE ${_SOURCES} ${_HEADERS} ${_OTHER_SOURCES})
 # Might not work with GCC 4.5 or + (non-robot modules crash at 1st reload = after 1 dlclose)
 #SET_TARGET_PROPERTIES(snddefault PROPERTIES VERSION ${VERSION} SOVERSION 0.0.0)
 
-ADD_PLIB_LIBRARY(snddefault sl)
+IF(NOT APPLE)
+  ADD_PLIB_LIBRARY(snddefault sl)
+ENDIF()
 
 ADD_SDL2_LIBRARY(snddefault)
 
