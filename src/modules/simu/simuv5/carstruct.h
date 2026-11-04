@@ -64,6 +64,7 @@ typedef struct
     tdble	fuelMass;		/* current fuel mass */
     tdble	fuel_consumption; /* average fuel consumption */
     tdble	fuel_prev;	/* average fuel consumption */
+    tdble		launchSpeed;	/* initial speed (m/s) still to apply when the race starts, 0 = none */
     tdble	fuel_time;	/* average fuel consumption */
     tDynPt	DynGC;		/* GC local data except position */
     tDynPt	DynGCg;		/* GC global data */

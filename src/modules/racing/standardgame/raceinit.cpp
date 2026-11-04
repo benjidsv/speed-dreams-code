@@ -27,6 +27,7 @@
 #endif
 
 #ifdef HAVE_CONFIG_H
+#include <dlfcn.h>
 #include <config.h>
 #endif
 
@@ -219,6 +220,10 @@ ReResumeRace()
  * Return
  *  none
  */
+// rlpilot: a host process can start a car anywhere on the lap instead of on the grid. It exports
+// bool rlp_launch(const tCarElt *car, float *lapFraction, float *toRightFraction, float *yawOffset, float *speed).
+typedef bool (*tReLaunchFn)(const tCarElt *, float *, float *, float *, float *);
+
 static void
 initStartingGrid(void)
 {
@@ -278,15 +283,24 @@ initStartingGrid(void)
     if (rows < 1) {
         rows = 1;
     }
+    static const tReLaunchFn launchFn = (tReLaunchFn)dlsym(RTLD_DEFAULT, "rlp_launch");
     for (i = 0; i < ReInfo->s->_ncars; i++) {
         car = &(ReInfo->carList[i]);
         car->_speed_x = speedInit;
         startpos = ReInfo->track->length - (d1 + (i / rows) * d2 + (i % rows) * d3);
         tr = a + b * ((i % rows) + 1) / (rows + 1);
+        float lapFraction, toRightFraction, yawOffset = 0, launchSpeed;
+        const bool launched = launchFn && launchFn(car, &lapFraction, &toRightFraction, &yawOffset, &launchSpeed);
+        if (launched) {
+            startpos = lapFraction * ReInfo->track->length;
+            car->_speed_x = launchSpeed;
+        }
         curseg = ReInfo->track->seg;  /* last segment */
         while (startpos < curseg->lgfromstart) {
             curseg = curseg->prev;
         }
+        if (launched)
+            tr = toRightFraction * curseg->width;
         ts = startpos - curseg->lgfromstart;
         car->_trkPos.seg = curseg;
         car->_trkPos.toRight = tr;
@@ -309,6 +323,7 @@ initStartingGrid(void)
         }
         car->_pos_Z = RtTrackHeightL(&(car->_trkPos)) + heightInit;
 
+        car->_yaw += yawOffset;
         FLOAT_NORM0_2PI(car->_yaw);
 
         RePhysicsEngine().configureCar(car);

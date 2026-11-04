@@ -221,6 +221,23 @@ ctrlCheck(tCar *car)
     }
 }
 
+/* Give a car its initial speed, along the direction it faces. */
+static void
+SimApplyLaunchSpeed(tCar *car)
+{
+    const tdble v = car->launchSpeed;
+    car->launchSpeed = 0;
+    car->DynGC.vel.x = v;
+    car->DynGC.vel.y = 0;
+    car->DynGCg.vel.x = v * cos(car->DynGCg.pos.az);
+    car->DynGCg.vel.y = v * sin(car->DynGCg.pos.az);
+    car->DynGC.vel.xy = car->DynGCg.vel.xy = fabs(v);
+    for (int i = 0; i < 4; i++) {
+        tWheel *wheel = &(car->wheel[i]);
+        wheel->spinVel = wheel->prespinVel = wheel->in.spinVel = wheel->feedBack.spinVel = v / wheel->radius;
+    }
+}
+
 /* Initial configuration */
 void
 SimConfig(tCarElt *carElt)
@@ -236,6 +253,10 @@ SimConfig(tCarElt *carElt)
     car->params = carElt->_carHandle;
 
     SimCarConfig(car);
+
+    // A start with an initial speed: the car settles at rest like any other, see SimUpdate.
+    car->launchSpeed = car->DynGC.vel.x;
+    car->DynGC.vel.x = car->DynGCg.vel.x = carElt->_speed_x = 0;
 
     SimCarCollideConfig(car, PTrack);
     sgMakeCoordMat4(carElt->pub.posMat, carElt->_pos_X, carElt->_pos_Y, carElt->_pos_Z - carElt->_statGC_z,
@@ -594,6 +615,13 @@ SimUpdate(tSituation *s, double deltaTime)
             {
                 continue;
             }
+        }
+
+        // On the last tick of the pre-start: not before, as the engine settles the cars for 1 s before it with _raceState
+        // still 0 and then holds them braked, and not after, as the robots' first drive of the race must see the speed.
+        if (car->launchSpeed != 0 && (s->_raceState & RM_RACE_PRESTART) && s->currentTime >= -1.5 * deltaTime)
+        {
+            SimApplyLaunchSpeed(car);
         }
 
         if (s->_raceState & RM_RACE_PRESTART &&
