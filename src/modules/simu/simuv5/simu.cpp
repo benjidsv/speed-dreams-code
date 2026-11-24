@@ -227,11 +227,22 @@ SimApplyLaunchSpeed(tCar *car)
 {
     const tdble v = car->launchSpeed;
     car->launchSpeed = 0;
-    car->DynGC.vel.x = v;
+    // rlpilot: along the road, not horizontally. With a horizontal speed, a car launched up a slope ran into the road
+    // (an impact and damage in the first step) and one launched down a slope flew off it and landed 20-40 m later.
+    // The slope is the road's under the wheels (front axle vs rear axle), as the car has settled on it.
+    const tWheel *w = car->wheel;
+    const tdble dx = 0.5f * (w[FRNT_RGT].pos.x + w[FRNT_LFT].pos.x - w[REAR_RGT].pos.x - w[REAR_LFT].pos.x);
+    const tdble dy = 0.5f * (w[FRNT_RGT].pos.y + w[FRNT_LFT].pos.y - w[REAR_RGT].pos.y - w[REAR_LFT].pos.y);
+    const tdble dz = 0.5f * (w[FRNT_RGT].zRoad + w[FRNT_LFT].zRoad - w[REAR_RGT].zRoad - w[REAR_LFT].zRoad);
+    const tdble run = sqrt(dx * dx + dy * dy);
+    const tdble slope = run > 0.5f ? dz / run : 0;
+    const tdble vh = v / sqrt(1 + slope * slope);  // horizontal part
+    car->DynGC.vel.x = vh;
     car->DynGC.vel.y = 0;
-    car->DynGCg.vel.x = v * cos(car->DynGCg.pos.az);
-    car->DynGCg.vel.y = v * sin(car->DynGCg.pos.az);
-    car->DynGC.vel.xy = car->DynGCg.vel.xy = fabs(v);
+    car->DynGCg.vel.x = vh * cos(car->DynGCg.pos.az);
+    car->DynGCg.vel.y = vh * sin(car->DynGCg.pos.az);
+    car->DynGC.vel.z = car->DynGCg.vel.z = vh * slope;
+    car->DynGC.vel.xy = car->DynGCg.vel.xy = fabs(vh);
     for (int i = 0; i < 4; i++) {
         tWheel *wheel = &(car->wheel[i]);
         wheel->spinVel = wheel->prespinVel = wheel->in.spinVel = wheel->feedBack.spinVel = v / wheel->radius;
