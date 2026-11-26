@@ -201,6 +201,17 @@ void ReSituationUpdater::runOneStep(double deltaTimeIncrement)
     tRmInfo* pCurrReInfo = ReSituation::self().data();
     tSituation *s = pCurrReInfo->s;
 
+    // rlpilot watch.py: RLP_REPLAY_FAST_UNTIL=<race time> fast-forwards (x16) up to that race time, then real time.
+    // Only the pacing against the wall clock changes, not the simulation step, so the replayed drive is the same.
+    static const char *fastUntil = getenv("RLP_REPLAY_FAST_UNTIL");
+    if (fastUntil) {
+        static const double until = atof(fastUntil), fast = 1.0 / 16;
+        if (s->currentTime < until)
+            pCurrReInfo->_reTimeMult = fast;
+        else if (pCurrReInfo->_reTimeMult == fast)
+            pCurrReInfo->_reTimeMult = 1.0;
+    }
+
     // Race messages life cycle management.
     ReRaceMsgManage(pCurrReInfo);
 
